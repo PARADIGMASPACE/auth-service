@@ -1,0 +1,52 @@
+version: '3.7'
+
+services:
+  auth-service:
+    build:
+      context: ./auth_service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - auth-db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://root:root@auth-db:5432/auth_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHONPATH=/auth_service:/auth_service/app:/auth_service/backend
+    networks:
+      - backend-network
+
+  auth-db:
+    build:
+      context: ./auth_service/database
+      dockerfile: Dockerfile
+    container_name: auth-db
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=auth_db
+    ports:
+      - "5551:5432"
+    networks:
+      - backend-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "5555:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend-network
+
+volumes:
+  user-db-data:
+  redis-data:
+
+networks:
+  backend-network:
+    driver: bridge
